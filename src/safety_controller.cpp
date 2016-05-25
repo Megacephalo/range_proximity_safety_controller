@@ -77,11 +77,9 @@ namespace beebot{
     void update() 
     {
       ros::Rate spin_rate(10) ;
-      //controller_->enable() ; // enable the controller when loading the nodelet 
-      // FIXME: seems that enable() is inherited from yocs::Controller but we don't have it now.
+
       while (! shutdown_requested_ && ros::ok())
       {
-	//controller_->spin() ;  // TODO: spin is also inherited from yocs::Controller, we need to write our own.
 	spin_rate.sleep() ;
       }
     }

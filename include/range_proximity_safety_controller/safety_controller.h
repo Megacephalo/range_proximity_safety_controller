@@ -52,6 +52,7 @@
 
 #include <string>
 #include <boost/concept_check.hpp>
+#include <boost/graph/graph_concepts.hpp>
 #include <ros/ros.h>
 #include <std_msgs/Empty.h>
 #include <geometry_msgs/Twist.h>
@@ -88,10 +89,9 @@ namespace beebot
       // how long to keep sending messages after the range is breached.
       double time_to_extend_repulsion ;
       nh_.param("time_to_extend_repulsion", time_to_extend_repulsion, 0.1) ;
+      nh_.param("safety_threshold", safetyThresh, 0.4) ;
       time_to_extend_repulsion_ = ros::Duration(time_to_extend_repulsion) ;
-      enable_controller_subscriber_ = nh_.subscribe("enable", 10, &SafetyController::enableCB, this) ;
-      disable_controller_subscriber_ = nh_.subscribe("disable", 10, &SafetyController::disableCB, this) ;
-      reset_safety_states_subscriber_ = nh_.subscribe("reset", 10, &SafetyController::resetSafetyStateCB, this) ;
+
       laser_sub_ = nh_.subscribe("scan", 1, &SafetyController::laserScanVigilanteCB, this) ;
       
       velocity_command_publisher_ = nh_.advertise< geometry_msgs::Twist >("cmd_vel", 10) ;
@@ -99,30 +99,26 @@ namespace beebot
       return true ;
     }
 
+    /**
+     * @brief If an event flag is received, the controller is activated and proceed to evasive maneuvre
+     */ 
+    void evasiveMan(bool rangeBreached_) ;    
+
   private:
     ros::NodeHandle nh_ ;
     std::string name_ ;
-    ros::Subscriber enable_controller_subscriber_, disable_controller_subscriber_ ;
     ros::Subscriber reset_safety_states_subscriber_ ;
     ros::Publisher velocity_command_publisher_ ;
     ros::Subscriber laser_sub_ ;
     ros::Duration time_to_extend_repulsion_ ;
     ros::Time last_event_time_ ;
     bool rangeBreached_ ;
+    double safetyThresh ;  // in meters
+    
+    float scan_min_range, scan_min_angle ;
     
     geometry_msgs::TwistPtr cmdvel_ ;  // velocity commands
     
-    /**
-     * @brief ROS logging output for enabling the controller
-     * @param msg incoming topic message
-    */ 
-    void enableCB(const std_msgs::EmptyConstPtr msg) ;
-    
-    /**
-     * @brief ROS logging output for disabling the controller
-     * @param msg incoming topic message
-     */
-    void disableCB(const std_msgs::EmptyConstPtr msg) ;
     
     /**
      * @brief Keep track of laser readings. Once passing the allowed range, a flag is raised
@@ -130,19 +126,65 @@ namespace beebot
      */ 
     void laserScanVigilanteCB(const sensor_msgs::LaserScan::ConstPtr& msg) ;
     
-    /**
-     * @brief If an event flag is received, the controller is activated and proceed to evasive maneuvre
-     */ 
-    void evasiveMan(bool rangeBreached_) ;
-    
-    /**
-     * @brief Reset the controller state back to vigilante state.
-     */ 
-    void resetSafetyStateCB(const std_msgs::EmptyConstPtr msg) ;
-    
   } ;  // Class definition
+
+
+
+void SafetyController::laserScanVigilanteCB(const sensor_msgs::LaserScan::ConstPtr& msg)
+{
+  scan_min_range = msg->ranges[0] ;
+  scan_min_angle = 0 ;
   
+  for (int j = 0 ; j <=180; j++) {
+    if(msg->ranges[j] < scan_min_range){
+      scan_min_range = msg->ranges[j] ;
+      scan_min_angle = j/2 ;
+    }
+  }
+  std::cout << "minimum range is " << scan_min_range << "at angle of" << scan_min_angle << "." << std::endl ;
   
+  if (scan_min_range <= safetyThresh ){ 
+    rangeBreached_ = true ; 
+    last_event_time_ = ros::Time::now() ;
+    ROS_WARN_STREAM("Safety range breached !! Safety Controller enabled") ;
+  }
+  else{
+    rangeBreached_ = false ;
+  }
+}
+
+void SafetyController::evasiveMan(bool rangeBreached_)
+{
+  
+  if(rangeBreached_ = true){
+    ROS_WARN_STREAM("Begin evasive maneuvre") ;
+    // if the obstacle is at the right side of the robot
+    if(scan_min_angle < 90){
+      cmdvel_.reset(new geometry_msgs::Twist()) ;
+      cmdvel_->angular.z = 1.0 ;
+      cmdvel_->linear.x = -0.5 ;
+      std::cout << "reversing left" << std::endl ;
+      velocity_command_publisher_.publish(cmdvel_) ;
+    }
+    // if the obstacle is at the left side of the robot
+    else {
+      cmdvel_.reset(new geometry_msgs::Twist()) ;
+      cmdvel_->angular.z = -1.0 ;
+      cmdvel_->linear.x = -0.5 ;
+      std::cout << "reversing right" << std::endl ;
+      velocity_command_publisher_.publish(cmdvel_) ;
+    }
+  }
+    // if we want to extend the safet state and we are within the time, just keep sending velocity command.
+  else if(time_to_extend_repulsion_ > ros::Duration(1e-10) &&
+           ros::Time::now() - last_event_time_ < time_to_extend_repulsion_) {
+    velocity_command_publisher_.publish(cmdvel_);
+  }
+  
+}
+
+
+
 } // namespace
 
 #endif
