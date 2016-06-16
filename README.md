@@ -4,7 +4,7 @@ Range Proximity Safety Controller only needs laser scanning as input to act as a
 
 # 1. Motivation
 
-This project is created under the necessity of using autonomous navigation on erratic robot which may collide with anything in its path as the planner may not be able to replan instantaneously for some musterious reasons. The safety controller prevent the robot from running into wall or obstaclesa by issueing cmd_vel command to the driver. Thus, this safety controller may be used under similar framework to [a link](http://wiki.ros.org/kobuki/Tutorials/Kobuki's%20Control%20System) and don't forget to remap the cmd_vel topic to your own. Failing to do so would have you prepare to get your robot screwed up!  :bomb:
+This project is created under the necessity of using autonomous navigation on erratic robot which may collide with anything in its path as the planner may not be able to replan instantaneously for some musterious reasons. The safety controller prevent the robot from running into wall or obstaclesa by issueing cmd_vel command to the driver. Thus, this safety controller may be used under similar framework to [Kobuki control system](http://wiki.ros.org/kobuki/Tutorials/Kobuki's%20Control%20System) and don't forget to remap the cmd_vel topic to your own. Failing to do so would have you prepare to get your robot screwed up!  :bomb:
 
 The project is still under development, but that does not mean you can't use it at your own risk. I wrote it as a node, but it was originally intended to be a NODELET ! If I have some spare time will come back and fix it. 
 
@@ -12,7 +12,7 @@ And one last thing. Relax! The node only requires laser scan, no tf frame or odo
 
 # 2. Installation
 
-To install it, first get your workspace set up. If you don't know what to do, head over to [Kobuki control system](http://wiki.ros.org/ROS/Tutorials/InstallingandConfiguringROSEnvironment)
+To install it, first get your workspace set up. If you don't know what to do, head over to [How to create ROS Workspace](http://wiki.ros.org/ROS/Tutorials/InstallingandConfiguringROSEnvironment)
 
 If you have the workspace up and running, open a terminal, cd the workspace's directory and clone this package as:
 
