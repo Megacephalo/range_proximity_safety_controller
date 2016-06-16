@@ -88,11 +88,13 @@ namespace beebot
     {
       // how long to keep sending messages after the range is breached.
       double time_to_extend_repulsion ;
-      nh_.param("time_to_extend_repulsion", time_to_extend_repulsion, 0.1) ;
-      nh_.param("safety_threshold", safetyThresh, 0.4) ;
+      
+      nh_.getParam("SafetyController/time_to_extend_repulsion", time_to_extend_repulsion) ;
+      nh_.getParam("SafetyController/safety_threshold", safetyThresh) ;
+      
       time_to_extend_repulsion_ = ros::Duration(time_to_extend_repulsion) ;
 
-      laser_sub_ = nh_.subscribe("scan", 1, &SafetyController::laserScanVigilanteCB, this) ;
+      laser_sub_ = nh_.subscribe("scan", 20, &SafetyController::laserScanVigilanteCB, this) ;
       
       velocity_command_publisher_ = nh_.advertise< geometry_msgs::Twist >("cmd_vel", 10) ;
       
@@ -142,11 +144,13 @@ void SafetyController::laserScanVigilanteCB(const sensor_msgs::LaserScan::ConstP
     }
   }
   std::cout << "minimum range is " << scan_min_range << "at angle of" << scan_min_angle << "." << std::endl ;
+  ROS_INFO_STREAM("Minimum range is " << scan_min_range << "at angle of" << scan_min_angle << ".") ;
   
   if (scan_min_range <= safetyThresh ){ 
     rangeBreached_ = true ; 
     last_event_time_ = ros::Time::now() ;
     ROS_WARN_STREAM("Safety range breached !! Safety Controller enabled") ;
+    SafetyController::evasiveMan(rangeBreached_);
   }
   else{
     rangeBreached_ = false ;
@@ -162,7 +166,7 @@ void SafetyController::evasiveMan(bool rangeBreached_)
     if(scan_min_angle < 90){
       cmdvel_.reset(new geometry_msgs::Twist()) ;
       cmdvel_->angular.z = 1.0 ;
-      cmdvel_->linear.x = -0.5 ;
+      cmdvel_->linear.x = -1.0 ;
       std::cout << "reversing left" << std::endl ;
       velocity_command_publisher_.publish(cmdvel_) ;
     }
@@ -170,7 +174,7 @@ void SafetyController::evasiveMan(bool rangeBreached_)
     else {
       cmdvel_.reset(new geometry_msgs::Twist()) ;
       cmdvel_->angular.z = -1.0 ;
-      cmdvel_->linear.x = -0.5 ;
+      cmdvel_->linear.x = -1.0 ;
       std::cout << "reversing right" << std::endl ;
       velocity_command_publisher_.publish(cmdvel_) ;
     }

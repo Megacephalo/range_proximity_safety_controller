@@ -34,7 +34,12 @@ include_directories(include
    ${catkin_LIBRARIES}
  )
 
-
+add_executable(range_proximity_safety_controller_node 
+    src/nodes/beebot_safety_controller_node.cpp
+)
+target_link_libraries(range_proximity_safety_controller_node 
+    ${catkin_LIBRARIES}
+)
 
  install(TARGETS range_proximity_safety_controller_nodelet
    DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
