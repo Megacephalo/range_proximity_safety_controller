@@ -10,6 +10,16 @@ The project is still under development, but that does not mean you can't use it 
 
 And one last thing. Relax! The node only requires laser scan, no tf frame or odometry is needed, so, enjoy! You are welcome.
 
+## 1.1 Subscribed Topics
+
+scan ([sensor_msgs/LaserScan](http://docs.ros.org/api/sensor_msgs/html/msg/LaserScan.html))
+  The laser scan used for distance verification.
+
+## 1.2 Published Topics
+
+cmd_vel ([geometry_msgs/Twist](http://docs.ros.org/api/geometry_msgs/html/msg/Twist.html))
+  Output velocity. When used in conjuction with a velocity multiplexe, remap it to ~/cmd_vel_safety for safety velocity command.
+
 # 2. Installation
 
 To install it, first get your workspace set up. If you don't know what to do, head over to [How to create ROS Workspace](http://wiki.ros.org/ROS/Tutorials/InstallingandConfiguringROSEnvironment)
